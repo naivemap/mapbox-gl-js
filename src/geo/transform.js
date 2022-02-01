@@ -402,7 +402,6 @@ class Transform {
 
     // Places the camera above terrain so that the current zoom value is respected at the center.
     // In other words, camera height in relative to ground elevation remains constant.
-    // Returns false if the elevation data is not available (yet) at the center point.
     _updateCameraOnTerrain() {
         const height = this.cameraToCenterDistance;
         const terrainElevation = this.pixelsPerMeter * this._centerAltitude;
@@ -1512,16 +1511,23 @@ class Transform {
         // Find uncompensated camera position for elevation sampling.
         // The default camera position might have been compensated by the active projection model.
         const mercPixelsPerMeter = mercatorZfromAltitude(1, this._center.lat) * this.worldSize;
-        const pos = this._computeCameraPosition(mercPixelsPerMeter);
+        const cameraPos = this._computeCameraPosition(mercPixelsPerMeter);
+        const mercCameraPos = new MercatorCoordinate(...cameraPos);
 
-        const elevationAtCamera = elevation.getAtPointOrZero(new MercatorCoordinate(...pos));
+        if (!elevation.isDataAvailableAtPoint(mercCameraPos)) {
+            // DEM Data is not yet loaded at this location,
+            // we can skip applying camera constraints
+            return;
+        }
+
+        const elevationAtCamera = elevation.getAtPointOrZero(mercCameraPos);
         const minHeight = this._minimumHeightOverTerrain() * Math.cos(degToRad(this._maxPitch));
         const terrainElevation = this.pixelsPerMeter / this.worldSize * elevationAtCamera;
         const cameraHeight = this._camera.position[2] - terrainElevation;
 
         if (cameraHeight < minHeight) {
             const center = this.locationCoordinate(this._center, this._centerAltitude);
-            const cameraToCenter = [center.x - pos[0], center.y - pos[1], center.z - pos[2]];
+            const cameraToCenter = [center.x - cameraPos[0], center.y - cameraPos[1], center.z - cameraPos[2]];
             const prevDistToCamera = vec3.length(cameraToCenter);
 
             // Adjust the camera vector so that the camera is placed above the terrain.

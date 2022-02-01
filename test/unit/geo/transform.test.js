@@ -623,6 +623,9 @@ test('transform', (t) => {
 
     const createCollisionElevation = (elevation) => {
         return {
+            isDataAvailableAtPoint(_) {
+                return true;
+            },
             getAtPointOrZero(p) {
                 if (p.x === 0.5 && p.y === 0.5)
                     return 0;
@@ -640,6 +643,9 @@ test('transform', (t) => {
 
     const createConstantElevation = (elevation) => {
         return {
+            isDataAvailableAtPoint(_) {
+                return true;
+            },
             getAtPointOrZero(_) {
                 return elevation;
             },
@@ -655,6 +661,9 @@ test('transform', (t) => {
 
     const createRampElevation = (scale) => {
         return {
+            isDataAvailableAtPoint(_) {
+                return true;
+            },
             getAtPointOrZero(p) {
                 return scale * (p.x + p.y - 1.0);
             },
@@ -764,6 +773,9 @@ test('transform', (t) => {
         let tilesDefaultElevation = 0;
         const tileElevation = {};
         const elevation = {
+            isDataAvailableAtPoint(_) {
+                return true;
+            },
             getAtPointOrZero(_) {
                 return this.exaggeration() * centerElevation;
             },
@@ -963,6 +975,9 @@ test('transform', (t) => {
 
         const transform = new Transform();
         transform.elevation = {
+            isDataAvailableAtPoint(_) {
+                return true;
+            },
             getAtPointOrZero(_) {
                 return 2760;
             },
@@ -1454,6 +1469,7 @@ test('transform', (t) => {
             const transform = new Transform(0, 22, 0, 85);
             transform.resize(100, 100);
             transform._elevation = {
+                isDataAvailableAtPoint: () => true,
                 getAtPointOrZero: () => groundElevation,
                 exaggeration: () => 1.0,
                 raycast: () => undefined,

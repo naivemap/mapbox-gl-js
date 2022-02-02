@@ -1514,7 +1514,7 @@ class Transform {
         const cameraPos = this._computeCameraPosition(mercPixelsPerMeter);
         const mercCameraPos = new MercatorCoordinate(...cameraPos);
 
-        if (!elevation.isDataAvailableAtPoint(mercCameraPos)) {
+        if (!elevation.isDataAvailableAtPoint(mercCameraPos) || !elevation.isDataAvailableAtPoint(this.locationCoordinate(this.center))) {
             // DEM Data is not yet loaded at this location,
             // we can skip applying camera constraints
             return;

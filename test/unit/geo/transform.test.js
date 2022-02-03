@@ -631,6 +631,9 @@ test('transform', (t) => {
                     return 0;
                 return elevation;
             },
+            getAtPoint(p) {
+                return this.getAtPointOrZero(p);
+            },
             getForTilePoints(tileID, points) {
                 for (const p of points) {
                     p[2] = elevation;
@@ -649,6 +652,9 @@ test('transform', (t) => {
             getAtPointOrZero(_) {
                 return elevation;
             },
+            getAtPoint(_) {
+                return this.getAtPointOrZero();
+            },
             getForTilePoints(tileID, points) {
                 for (const p of points) {
                     p[2] = elevation;
@@ -666,6 +672,9 @@ test('transform', (t) => {
             },
             getAtPointOrZero(p) {
                 return scale * (p.x + p.y - 1.0);
+            },
+            getAtPoint(p) {
+                return this.getAtPointOrZero(p);
             },
             getForTilePoints(tileID, points) {
                 for (const p of points) {
@@ -778,6 +787,9 @@ test('transform', (t) => {
             },
             getAtPointOrZero(_) {
                 return this.exaggeration() * centerElevation;
+            },
+            getAtPoint(_) {
+                return this.getAtPointOrZero();
             },
             getMinMaxForTile(tileID) {
                 const ele = tileElevation[tileID.key] !== undefined ? tileElevation[tileID.key] : tilesDefaultElevation;
@@ -980,6 +992,9 @@ test('transform', (t) => {
             },
             getAtPointOrZero(_) {
                 return 2760;
+            },
+            getAtPoint(_) {
+                return this.getAtPointOrZero();
             },
             getMinMaxForTile(tileID) {
                 for (let z = tileID.canonical.z - 1; z >= 9; z--) {
@@ -1471,6 +1486,7 @@ test('transform', (t) => {
             transform._elevation = {
                 isDataAvailableAtPoint: () => true,
                 getAtPointOrZero: () => groundElevation,
+                getAtPoint: () => groundElevation,
                 exaggeration: () => 1.0,
                 raycast: () => undefined,
                 getMinElevationBelowMSL: () => 0

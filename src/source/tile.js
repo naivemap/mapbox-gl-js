@@ -6,7 +6,7 @@ import FeatureIndex from '../data/feature_index.js';
 import GeoJSONFeature from '../util/vectortile_to_geojson.js';
 import featureFilter from '../style-spec/feature_filter/index.js';
 import SymbolBucket from '../data/bucket/symbol_bucket.js';
-import {CollisionBoxArray, TileBoundsArray, PosArray, TriangleIndexArray, LineStripIndexArray} from '../data/array_types.js';
+import {CollisionBoxArray, TileBoundsArray, PosArray, TriangleIndexArray, LineStripIndexArray, StructArrayLayout3i6} from '../data/array_types.js';
 import Texture from '../render/texture.js';
 import browser from '../util/browser.js';
 import {Debug} from '../util/debug.js';
@@ -21,7 +21,8 @@ import earcut from 'earcut';
 import getTileMesh from './tile_mesh.js';
 import tileTransform from '../geo/projection/tile_transform.js';
 
-import boundsAttributes from '../data/bounds_attributes.js';
+import boundsAttributes, {boundsGlobeAttributesExt} from '../data/bounds_attributes.js';
+
 import EXTENT from '../data/extent.js';
 import Point from '@mapbox/point-geometry';
 import SegmentVector from '../data/segment.js';
@@ -145,6 +146,7 @@ class Tile {
     _tileBoundsIndexBuffer: IndexBuffer;
     _tileDebugSegments: SegmentVector;
     _tileBoundsSegments: SegmentVector;
+    _tileDebugGlobeBuffer: ?VertexBuffer;
 
     /**
      * @param {OverscaledTileID} tileID
@@ -328,6 +330,11 @@ class Tile {
         if (this.globeGridBuffer) {
             this.globeGridBuffer.destroy();
             this.globeGridBuffer = null;
+        }
+
+        if (this._tileDebugGlobeBuffer) {
+            this._tileDebugGlobeBuffer.destroy();
+            this._tileDebugGlobeBuffer = null;
         }
 
         Debug.run(() => {
@@ -653,6 +660,41 @@ class Tile {
         this._tileBoundsBuffer = context.createVertexBuffer(boundsVertices, boundsAttributes.members);
         this._tileBoundsIndexBuffer = context.createIndexBuffer(boundsIndices);
         this._tileBoundsSegments = SegmentVector.simpleSegment(0, 0, boundsVertices.length, boundsIndices.length);
+    }
+
+    _makeTileDebugGlobeBuffer(context: Context, projection: Projection) {
+        if (this._tileDebugGlobeBuffer || !projection || projection.name !== 'globe') return;
+
+        const debugVertices = new PosArray();
+        const debugIndices = new LineStripIndexArray();
+        const debugExtraGlobe = new StructArrayLayout3i6(); // TODO: Generate an appropriate alias for better readability.
+
+        const addLine = (sx: number, sy: number, ex: number, ey: number, pointCount: number) => {
+            const stepX = (ex - sx) / (pointCount - 1);
+            const stepY = (ey - sy) / (pointCount - 1);
+
+            const vOffset = debugVertices.length;
+
+            for (let i = 0; i < pointCount; i++) {
+                const x = sx + i * stepX;
+                const y = sy + i * stepY;
+                debugVertices.emplaceBack(x, y);
+                const gp = projection.projectTilePoint(x, y, this.tileID.canonical);
+                debugExtraGlobe.emplaceBack(gp.x, gp.y, gp.z);
+                debugIndices.emplaceBack(vOffset + i);
+            }
+        };
+
+        const e = EXTENT;
+        addLine(0, 0, e, 0, 16);
+        addLine(e, 0, e, e, 16);
+        addLine(e, e, 0, e, 16);
+        addLine(0, e, 0, 0, 16);
+
+        this._tileDebugIndexBuffer = context.createIndexBuffer(debugIndices);
+        this._tileDebugBuffer = context.createVertexBuffer(debugVertices, boundsAttributes.members);
+        this._tileDebugGlobeBuffer = context.createVertexBuffer(debugExtraGlobe, boundsGlobeAttributesExt.members);
+        this._tileDebugSegments = SegmentVector.simpleSegment(0, 0, debugVertices.length, debugIndices.length);
     }
 }
 

@@ -11,6 +11,9 @@ import browser from '../util/browser.js';
 import type Painter from './painter.js';
 import type SourceCache from '../source/source_cache.js';
 import type {OverscaledTileID} from '../source/tile_id.js';
+import VertexBuffer from '../gl/vertex_buffer.js';
+import IndexBuffer from '../gl/index_buffer.js';
+import SegmentVector from '../data/segment.js';
 
 export default drawDebug;
 
@@ -125,8 +128,11 @@ function drawDebugTile(painter, sourceCache, coord: OverscaledTileID) {
     const context = painter.context;
     const gl = context.gl;
 
+    const isGlobeProjection = painter.transform.projection.name === 'globe';
+    const definesValues = isGlobeProjection ? ['PROJECTION_GLOBE_VIEW'] : null;
+
     const posMatrix = coord.projMatrix;
-    const program = painter.useProgram('debug');
+    const program = painter.useProgram('debug', null, definesValues);
     const tile = sourceCache.getTileByID(coord.key);
     if (painter.terrain) painter.terrain.setupElevationDraw(tile, program);
 
@@ -139,7 +145,11 @@ function drawDebugTile(painter, sourceCache, coord: OverscaledTileID) {
     // Bind the empty texture for drawing outlines
     painter.emptyTexture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
 
-    tile._makeDebugTileBoundsBuffers(painter.context, painter.transform.projection);
+    if (isGlobeProjection) {
+        tile._makeTileDebugGlobeBuffer(painter.context, painter.transform.projection);
+    } else {
+        tile._makeDebugTileBoundsBuffers(painter.context, painter.transform.projection);
+    }
 
     const debugBuffer = tile._tileDebugBuffer || painter.debugBuffer;
     const debugIndexBuffer = tile._tileDebugIndexBuffer || painter.debugIndexBuffer;
@@ -147,7 +157,8 @@ function drawDebugTile(painter, sourceCache, coord: OverscaledTileID) {
 
     program.draw(context, gl.LINE_STRIP, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
         debugUniformValues(posMatrix, Color.red), id,
-        debugBuffer, debugIndexBuffer, debugSegments);
+        debugBuffer, debugIndexBuffer, debugSegments,
+        null, null, null, tile._tileDebugGlobeBuffer);
 
     const tileRawData = tile.latestRawTileData;
     const tileByteLength = (tileRawData && tileRawData.byteLength) || 0;

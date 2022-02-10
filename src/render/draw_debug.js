@@ -11,9 +11,6 @@ import browser from '../util/browser.js';
 import type Painter from './painter.js';
 import type SourceCache from '../source/source_cache.js';
 import type {OverscaledTileID} from '../source/tile_id.js';
-import VertexBuffer from '../gl/vertex_buffer.js';
-import IndexBuffer from '../gl/index_buffer.js';
-import SegmentVector from '../data/segment.js';
 
 export default drawDebug;
 
@@ -172,6 +169,7 @@ function drawDebugTile(painter, sourceCache, coord: OverscaledTileID) {
     const tileLabel = `${tileIdText} ${tileSizeKb}kb`;
     drawTextToOverlay(painter, tileLabel);
 
+    // TODO: Add curved geometry for the text.
     program.draw(context, gl.TRIANGLES, depthMode, stencilMode, ColorMode.alphaBlended, CullFaceMode.disabled,
         debugUniformValues(posMatrix, Color.transparent, scaleRatio), id,
         painter.debugBuffer, painter.quadTriangleIndexBuffer, painter.debugSegments);

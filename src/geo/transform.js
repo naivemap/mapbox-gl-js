@@ -714,7 +714,7 @@ class Transform {
         const ppcAtCenter = this.pixelsPerMeter / (mercatorZfromAltitude(1, centerLatitude) * this.worldSize);
         const numTiles = 1 << z;
         const centerPoint = [numTiles * centerCoord.x, numTiles * centerCoord.y, 0];
-        const isGlobe = this.projection.name == 'globe';
+        const isGlobe = this.projection.name === 'globe';
         const zInMeters = !isGlobe;
         const cameraFrustum = Frustum.fromInvProjectionMatrix(this.invProjMatrix, this.worldSize, z, zInMeters);
         const cameraCoord = this.pointCoordinate(this.getCameraPoint());

@@ -710,9 +710,12 @@ class Transform {
         if (options.maxzoom !== undefined && z > options.maxzoom) z = options.maxzoom;
 
         const centerCoord = this.locationCoordinate(this.center);
+        const centerLatitude = this.center.lat;
+        const ppcAtCenter = this.pixelsPerMeter / (mercatorZfromAltitude(1, centerLatitude) * this.worldSize);
         const numTiles = 1 << z;
         const centerPoint = [numTiles * centerCoord.x, numTiles * centerCoord.y, 0];
-        const zInMeters = this.projection.name !== 'globe';
+        const isGlobe = this.projection.name == 'globe';
+        const zInMeters = !isGlobe;
         const cameraFrustum = Frustum.fromInvProjectionMatrix(this.invProjMatrix, this.worldSize, z, zInMeters);
         const cameraCoord = this.pointCoordinate(this.getCameraPoint());
         const meterToTile = numTiles * mercatorZfromAltitude(1, this.center.lat);
@@ -844,20 +847,34 @@ class Transform {
             const dy = it.aabb.distanceY(cameraPoint);
             let dzSqr = cameraHeightSqr;
 
-            if (useElevationData) {
+            if (useElevationData || isGlobe) {
                 dzSqr = square(it.aabb.distanceZ(cameraPoint) * meterToTile);
             }
 
             let tileScaleAdjustment = 1;
-            if (this.projection.isReprojectedInTileSpace && actualZ <= 5) {
-                // In other projections, not all tiles are the same size.
-                // Account for the tile size difference by adjusting the distToSplit.
-                // Adjust by the ratio of the area at the tile center to the area at the map center.
-                // Adjustments are only needed at lower zooms where tiles are not similarly sized.
-                const numTiles = Math.pow(2, it.zoom);
-                const relativeScale = relativeScaleAtMercatorCoord(new MercatorCoordinate((it.x + 0.5) / numTiles, (it.y + 0.5) / numTiles));
-                // Fudge the ratio slightly so that all tiles near the center have the same zoom level.
-                tileScaleAdjustment = relativeScale > 0.85 ? 1 : relativeScale;
+            if (isGlobe) {
+                // Compensate physical sizes of the tiles when determining which zoom level to use.
+                // In practice tiles closer to poles should use more aggressive LOD as their
+                // physical size is already smaller than size of tiles near the equator.
+                const tilesAtZoom = Math.pow(2, it.zoom);
+                const minLat = latFromMercatorY((it.y + 1) / tilesAtZoom);
+                const maxLat = latFromMercatorY((it.y) / tilesAtZoom);
+                const closestLat = Math.min(Math.max(centerLatitude, minLat), maxLat);
+                const ppmAtTileLat = this.projection.pixelsPerMeter(closestLat, this.worldSize);
+                const ppcAtTile = ppmAtTileLat / (mercatorZfromAltitude(1, closestLat) * this.worldSize);
+
+                tileScaleAdjustment = Math.min(ppcAtTile / ppcAtCenter, 1.0);
+            } else {
+                if (this.projection.isReprojectedInTileSpace && actualZ <= 5) {
+                    // In other projections, not all tiles are the same size.
+                    // Account for the tile size difference by adjusting the distToSplit.
+                    // Adjust by the ratio of the area at the tile center to the area at the map center.
+                    // Adjustments are only needed at lower zooms where tiles are not similarly sized.
+                    const numTiles = Math.pow(2, it.zoom);
+                    const relativeScale = relativeScaleAtMercatorCoord(new MercatorCoordinate((it.x + 0.5) / numTiles, (it.y + 0.5) / numTiles));
+                    // Fudge the ratio slightly so that all tiles near the center have the same zoom level.
+                    tileScaleAdjustment = relativeScale > 0.85 ? 1 : relativeScale;
+                }
             }
 
             const distanceSqr = dx * dx + dy * dy + dzSqr;

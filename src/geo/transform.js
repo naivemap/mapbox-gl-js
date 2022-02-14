@@ -900,7 +900,7 @@ class Transform {
             const y = it.y;
             let fullyVisible = it.fullyVisible;
 
-            // Visibility of a tile is not required if any of its ancestor if fully inside the frustum
+            // Visibility of a tile is not required if any of its ancestor is fully inside the frustum
             if (!fullyVisible) {
                 const intersectResult = it.aabb.intersects(cameraFrustum);
 

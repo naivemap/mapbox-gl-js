@@ -864,17 +864,15 @@ class Transform {
                 const ppcAtTile = ppmAtTileLat / (mercatorZfromAltitude(1, closestLat) * this.worldSize);
 
                 tileScaleAdjustment = Math.min(ppcAtTile / ppcAtCenter, 1.0);
-            } else {
-                if (this.projection.isReprojectedInTileSpace && actualZ <= 5) {
-                    // In other projections, not all tiles are the same size.
-                    // Account for the tile size difference by adjusting the distToSplit.
-                    // Adjust by the ratio of the area at the tile center to the area at the map center.
-                    // Adjustments are only needed at lower zooms where tiles are not similarly sized.
-                    const numTiles = Math.pow(2, it.zoom);
-                    const relativeScale = relativeScaleAtMercatorCoord(new MercatorCoordinate((it.x + 0.5) / numTiles, (it.y + 0.5) / numTiles));
-                    // Fudge the ratio slightly so that all tiles near the center have the same zoom level.
-                    tileScaleAdjustment = relativeScale > 0.85 ? 1 : relativeScale;
-                }
+            } else if (this.projection.isReprojectedInTileSpace && actualZ <= 5) {
+                // In other projections, not all tiles are the same size.
+                // Account for the tile size difference by adjusting the distToSplit.
+                // Adjust by the ratio of the area at the tile center to the area at the map center.
+                // Adjustments are only needed at lower zooms where tiles are not similarly sized.
+                const numTiles = Math.pow(2, it.zoom);
+                const relativeScale = relativeScaleAtMercatorCoord(new MercatorCoordinate((it.x + 0.5) / numTiles, (it.y + 0.5) / numTiles));
+                // Fudge the ratio slightly so that all tiles near the center have the same zoom level.
+                tileScaleAdjustment = relativeScale > 0.85 ? 1 : relativeScale;
             }
 
             const distanceSqr = dx * dx + dy * dy + dzSqr;

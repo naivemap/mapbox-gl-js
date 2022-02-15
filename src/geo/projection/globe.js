@@ -316,8 +316,8 @@ export function aabbForTileOnGlobe(tr: Transform, numTiles: number, z: number, x
 
     const closestArc = new Arc(arcA, arcB, arcCenter);
     const arcBounds = [(localExtremum(closestArc, 0) || arcA[0]),
-                       (localExtremum(closestArc, 1) || arcA[1]),
-                       (localExtremum(closestArc, 2) || arcA[2])];
+        (localExtremum(closestArc, 1) || arcA[1]),
+        (localExtremum(closestArc, 2) || arcA[2])];
 
     // Reduce height of the aabb to match height of the closest arc. This reduces false positives
     // of tiles farther away from the center as they would otherwise intersect with far end

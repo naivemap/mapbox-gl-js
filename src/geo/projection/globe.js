@@ -362,6 +362,16 @@ export function latLngToECEF(lat: number, lng: number, radius: ?number): Array<n
     return csLatLngToECEF(Math.cos(degToRad(lat)), Math.sin(degToRad(lat)), lng, radius);
 }
 
+export function tileCoordToECEF(x: number, y: number, id: CanonicalTileID): Array<number> {
+    const tiles = Math.pow(2.0, id.z);
+    const mx = (x / EXTENT + id.x) / tiles;
+    const my = (y / EXTENT + id.y) / tiles;
+    const lat = latFromMercatorY(my);
+    const lng = lngFromMercatorX(mx);
+    const pos = latLngToECEF(lat, lng);
+    return pos;
+}
+
 export function globeECEFOrigin(tileMatrix: Mat4, id: UnwrappedTileID): [number, number, number] {
     const origin = [0, 0, 0];
     const bounds = globeTileBounds(id.canonical);

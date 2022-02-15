@@ -53,6 +53,8 @@ import type IndexBuffer from '../gl/index_buffer.js';
 import type {Projection} from '../geo/projection/index.js';
 import type {TileTransform} from '../geo/projection/tile_transform.js';
 import type Painter from '../render/painter.js';
+import {globeTileBounds,  globeNormalizeECEF, tileCoordToECEF} from '../geo/projection/globe.js';
+import {vec3} from 'gl-matrix';
 
 export type TileState =
     | 'loading'   // Tile data is in the process of loading.
@@ -669,6 +671,10 @@ class Tile {
         const debugIndices = new LineStripIndexArray();
         const debugExtraGlobe = new StructArrayLayout3i6(); // TODO: Generate an appropriate alias for better readability.
 
+        const id = this.tileID.canonical;
+        const bounds = globeTileBounds(id);
+        const normalizationMatrix = globeNormalizeECEF(bounds);
+
         const addLine = (sx: number, sy: number, ex: number, ey: number, pointCount: number) => {
             const stepX = (ex - sx) / (pointCount - 1);
             const stepY = (ey - sy) / (pointCount - 1);
@@ -679,8 +685,13 @@ class Tile {
                 const x = sx + i * stepX;
                 const y = sy + i * stepY;
                 debugVertices.emplaceBack(x, y);
-                const gp = projection.projectTilePoint(x, y, this.tileID.canonical);
-                debugExtraGlobe.emplaceBack(gp.x, gp.y, gp.z);
+
+                // The next two lines are equivalent to doing projection.projectTilePoint.
+                // This way we don't recompute the normalization matrix everytime since it remains the same for all points.
+                const ecef = tileCoordToECEF(x, y, id);
+                const gp = vec3.transformMat4(ecef, ecef, normalizationMatrix);
+
+                debugExtraGlobe.emplaceBack(gp[0], gp[1], gp[2]);
                 debugIndices.emplaceBack(vOffset + i);
             }
         };

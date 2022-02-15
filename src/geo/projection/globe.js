@@ -40,11 +40,11 @@ const TILE_SIZE = 512;
 
 export class Arc {
     constructor(p0: Vec3, p1: Vec3, center: Vec3) {
-        this.a = vec3.sub(vec3.create(), p0, center);
-        this.b = vec3.sub(vec3.create(), p1, center);
+        this.a = vec3.sub([], p0, center);
+        this.b = vec3.sub([], p1, center);
         this.center = center;
-        const an = vec3.normalize(vec3.create(), this.a);
-        const bn = vec3.normalize(vec3.create(), this.b);
+        const an = vec3.normalize([], this.a);
+        const bn = vec3.normalize([], this.b);
         this.angle = Math.acos(vec3.dot(an, bn));
     }
 
@@ -281,12 +281,12 @@ export function aabbForTileOnGlobe(tr: Transform, numTiles: number, z: number, x
 
     // Compute parameters describing edges of the tile (i.e. arcs) on the globe surface.
     // Vertical edges revolves around the globe origin whereas horizontal edges revolves around the y-axis.
-    const globeCenter: Vec3 = vec3.fromValues(m[12], m[13], m[14]);
+    const globeCenter = [m[12], m[13], m[14]];
 
     const center = [lngFromMercatorX(tr.center.lng), latFromMercatorY(tr.center.lat)];
     const [bcLng, bcLat] = bounds.getCenter().toArray();
     const tileCenter = [lngFromMercatorX(bcLng), latFromMercatorY(bcLat)];
-    let arcCenter = vec3.create();
+    let arcCenter = new Array(3);
     let closestArcIdx = 0;
 
     const dx = center[0] - tileCenter[0];
@@ -301,7 +301,7 @@ export function aabbForTileOnGlobe(tr: Transform, numTiles: number, z: number, x
         arcCenter = globeCenter;
     } else {
         closestArcIdx = dy >= 0 ? 0 : 2;
-        const yAxis: Vec3 = vec3.fromValues(m[4], m[5], m[6]);
+        const yAxis = [m[4], m[5], m[6]];
         let shift: number;
         if (dy >= 0) {
             shift = -Math.sin(degToRad(bounds.getSouth())) * GLOBE_RADIUS;
@@ -311,13 +311,13 @@ export function aabbForTileOnGlobe(tr: Transform, numTiles: number, z: number, x
         arcCenter = vec3.scaleAndAdd(arcCenter, globeCenter, yAxis, shift);
     }
 
-    const arcA: Vec3 = corners[closestArcIdx];
-    const arcB: Vec3 = corners[(closestArcIdx + 1) % 4];
+    const arcA = corners[closestArcIdx];
+    const arcB = corners[(closestArcIdx + 1) % 4];
 
     const closestArc = new Arc(arcA, arcB, arcCenter);
-    const arcBounds = vec3.fromValues((localExtremum(closestArc, 0) || arcA[0]),
-                                      (localExtremum(closestArc, 1) || arcA[1]),
-                                      (localExtremum(closestArc, 2) || arcA[2]));
+    const arcBounds = [(localExtremum(closestArc, 0) || arcA[0]),
+                       (localExtremum(closestArc, 1) || arcA[1]),
+                       (localExtremum(closestArc, 2) || arcA[2])];
 
     // Reduce height of the aabb to match height of the closest arc. This reduces false positives
     // of tiles farther away from the center as they would otherwise intersect with far end

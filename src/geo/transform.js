@@ -403,7 +403,7 @@ class Transform {
     }
 
     _updateCameraZoom() {
-        if (!this._terrainEnabled() || !this._centerAltitudeValid) {
+        if (!this._centerAltitudeValid) {
             return;
         }
         // Camera zoom describes the distance of the camera to the sea level (altitude).
@@ -1842,8 +1842,9 @@ class Transform {
         this._pitch = clamp(pitch, degToRad(this.minPitch), degToRad(this.maxPitch));
         this.angle = wrap(bearing, -Math.PI, Math.PI);
         this._setZoom(clamp(zoom, this._minZoom, this._maxZoom));
-        if (this._elevationDataAvailableAtCenter())
-            this._updateCameraZoom();
+
+        this._updateCameraZoom();
+
         this._center = this.coordinateLocation(new MercatorCoordinate(position[0], position[1], position[2]));
         this._unmodified = false;
         this._constrain();

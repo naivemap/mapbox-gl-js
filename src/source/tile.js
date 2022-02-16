@@ -730,28 +730,28 @@ class Tile {
     }
 
     _makeGlobeTileDebugTextBuffer(context: Context, id: CanonicalTileID, normalizationMatrix: Float64Array) {
-        const SEGMENTS = 8;
-        const points = SEGMENTS + 1;
+        const SEGMENTS = 4;
+        const numVertices = SEGMENTS + 1;
         const step = EXTENT / SEGMENTS;
 
         const vertices = new PosArray();
         const indices = new TriangleIndexArray();
         const extraGlobe = new PosGlobeExtArray();
 
-        const totalPoints = points * points;
-        const totalIndices = SEGMENTS * SEGMENTS * 6;
-        indices.reserve(totalIndices);
-        vertices.reserve(totalPoints);
-        extraGlobe.reserve(totalPoints);
+        const totalVertices = numVertices * numVertices;
+        const totalTriangles = SEGMENTS * SEGMENTS * 2;
+        indices.reserve(totalTriangles);
+        vertices.reserve(totalVertices);
+        extraGlobe.reserve(totalVertices);
 
         const toIndex = (j: number, i: number): number => {
-            return points * j + i;
+            return totalVertices * j + i;
         };
 
         // add vertices.
-        for (let j = 0; j < points; j++) {
+        for (let j = 0; j < totalVertices; j++) {
             const y = j * step;
-            for (let i = 0; i <= points; i++) {
+            for (let i = 0; i < totalVertices; i++) {
                 const x = i * step;
                 vertices.emplaceBack(x, y);
 
@@ -780,7 +780,7 @@ class Tile {
         this._tileDebugTextIndexBuffer = context.createIndexBuffer(indices);
         this._tileDebugTextBuffer = context.createVertexBuffer(vertices, posAttributes.members);
         this._globeTileDebugTextBuffer = context.createVertexBuffer(extraGlobe, posAttributesGlobeExt.members);
-        this._tileDebugTextSegments = SegmentVector.simpleSegment(0, 0, vertices.length, indices.length);
+        this._tileDebugTextSegments = SegmentVector.simpleSegment(0, 0, totalVertices, totalTriangles);
     }
 }
 
